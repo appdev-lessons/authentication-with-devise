@@ -1,63 +1,44 @@
 # Authentication with Devise
 
-The [Devise gem][2] is probably the most popular authentication library in the Rails ecosystem.
+The [Devise gem](https://github.com/plataformatec/devise) is probably the most popular authentication library in the Rails ecosystem.
 
 ## Add sign-in/sign-out
 
- - Add `gem 'devise'` to your Gemfile and `bundle`
- - `rails g devise:install`
+ - Add `gem "devise"` to your Gemfile and `bundle`
+ - Run `rails g devise:install`
 
 Devise will give you some setup instructions. We don't need to worry about most of them, but we do need to set a root URL. Usually, you will point the root URL to the index action of some important resource in your application: In `config/routes.rb`:
 
 ```ruby
-root 'photos#index'
+root "photos#index"
 ```
 
-> This is just a shortcut for setting a root URL the old way,
+This is just a shortcut for setting a root URL the old way,
 
->     get "/", :controller => "photos", :action => "index"
+```ruby
+get "/", :controller => "photos", :action => "index"
+```
 
-Next, we need to secure one of our models with Devise. If you already have a model (like User) created, skip down to the "Add Devise for existing model" section. Otherwise continue with the "Generate a new model with Devise" section. 
+Next, we need to secure one of our models with Devise.
 
 ### Generate a new model with Devise
 
 Use the following command to generate a User model with Devise built-in. Replace the column names with ones that are relevant to your application. 
 
-```bash
+```
 rails g devise user username:string avatar_url:string
 ```
 
 Examine the generated migration file and make any desired changes (i.e., default values, uniqueness constraints, indexes)
 
-`rails db:migrate` and restart your server.
-
-### Add Devise for existing model
-
-**Skip down to "benefits" if you've already generated a new model with Devise. You don't need to do both.**
-
-If you already have rows in the users table and don't want to drop your database, you will have to go through a couple of extra steps to prevent errors.
-
- - First, add a column called "email" if you don't already have one.
- - Second, make sure that every existing row has a unique value for email.
-
-    Then,
-
-        rails g devise user
-
- - Finally, go into the migration file called "add_devise_to_users" and comment out the line that adds an email column.
-
-    and
-
-        rails db:migrate
-
-    and restart your server.
+`rake db:migrate` and restart your server.
 
 ## Benefits
 
 The big benefits that we now get for free from Devise are:
 
  - RCAVs that handle sign up, sign in, and sign out -- all done, for free!
-    - Visit /rails/info and search for "user" to see the routes that were automatically written. It's up to use to link to these routes in our UI wherever we think it appropriate; e.g. in the navbar.
+    - Visit `/rails/info` and search for "user" to see the routes that were automatically written. It's up to use to link to these routes in our UI wherever we think it appropriate; e.g. in the navbar.
     - The most commonly used routes are:
         - Sign up: `new_user_registration_path`
         - Sign in: `new_user_session_path`
@@ -82,21 +63,19 @@ The first problem is that we don't even have any code to edit in order to custom
 
 It's really easy to have Devise generate copies of these templates that we can edit, though. And then our edited versions will take precedence. Simply run
 
-```bash
+```
 rails g devise:views
 ```
 
-There will now be a folder in your `app/views` folder called `devise`, with a whole bunch of stuff in it. What we are most interested in are the contents of the `registrations` and `sessions` subfolders. `app/views/devise/registrations/new.html.erb` is the sign up form, `registrations/edit.html.erb` is the edit profile form, and `sessions/new.html.erb` is the sign in form.
+There will now be a folder in your `app/views` folder called `devise`, with a whole bunch of stuff in it. What we are most interested in are the contents of the `registrations` and `sessions` subfolders:
+
+- `registrations/new.html.erb` is the sign up form, 
+- `registrations/edit.html.erb` is the edit profile form, and 
+- `sessions/new.html.erb` is the sign in form.
 
 ### Step Two: Modify The Markup
 
-Devise's markup is a bit more advanced than what we had time to get to in class. We have, until now, only been writing raw HTML code by hand.
-
-In practice, Rails developers often use built-in Ruby helper methods to generate HTML. This provides benefits in terms of security, brevity, etc.
-
-Devise is using some of these helpers to draw the `<form>` and `<input>` elements in its forms, so we don't directly see those things in the view templates.
-
-Instead, we see something like
+Devise is using some of the helper methods we've just learned about to draw the `<form>` and `<input>` elements:
 
 ```erb
 <%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
@@ -109,20 +88,18 @@ Instead, we see something like
     <%= f.password_field :password %></div>
 ```
 
-etc. Basically, the `form_for` helper method is spitting out the `<form>` tag, and each of the `f.____field` methods are spitting out the `<input>` tags.
-
 #### Add HTML Around The Helpers
 
 You can write whatever HTML you want *around* these helpers; for example, Devise has already wrapped each label/input pair inside a `<div>`.
 
-If we're adhering to [Bootstrap conventions for form markup][1], we should probably add `class="form-group"` to each of those. Also, we should remove the `<br />` tags that Devise includes.
+If we're adhering to [Bootstrap conventions for form markup](http://getbootstrap.com/css/#forms), we should probably add `class="form-group"` to each of those. Also, we should remove the `<br />` tags that Devise includes.
 
 #### Add CSS Classes To The Helpers
 
 You can also add CSS classes to the input tags they generate, like so:
 
 ```erb
-<%= f.password_field :password, :class => "form-control" %>
+<%= f.password_field :password, class: "form-control" %>
 ```
 
 #### Add Additional Input Helpers
@@ -150,6 +127,7 @@ The last step we need to take is to whitelist these additional attributes as thi
 
 ```ruby
 class ApplicationController < ActionController::Base
+  before_action :authenticate_user!
   before_action :configure_permitted_parameters, if: :devise_controller?
   
   def configure_permitted_parameters
@@ -160,7 +138,6 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-You need to add the name of each column you want to be able to modify to the respective array of symbols. In the example, I have whitelisted both username and avatar_url to be modified upon sign-up, but only avatar_url can be modified upon account update. You have to decide what makes sense in your app.
+You need to add the name of each column you want to be able to modify to the respective array of symbols. In the example, I have whitelisted both `:username` and `:avatar_url` to be modified upon sign-up, but only `:avatar_url` can be modified upon account update. You have to decide what makes sense in your app.
 
-  [1]: http://getbootstrap.com/css/#forms
-  [2]: https://github.com/plataformatec/devise
+---
