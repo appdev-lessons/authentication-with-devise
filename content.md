@@ -1,4 +1,4 @@
-# Authentication with Devise
+# Authentication with Devise: Full Reference
 
 The [Devise gem](https://github.com/plataformatec/devise) is probably the most popular authentication library in the Rails ecosystem.
 
