@@ -78,28 +78,47 @@ There will now be a folder in your `app/views` folder called `devise`, with a wh
 Devise is using some of the helper methods we've just learned about to draw the `<form>` and `<input>` elements:
 
 ```erb
-<%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
-  <%= devise_error_messages! %>
+<!-- app/views/devise/registrations/new.html.erb -->
 
-  <div><%= f.label :email %><br />
-  <%= f.email_field :email, autofocus: true %></div>
+<h2>Sign up</h2>
 
-  <div><%= f.label :password %><br />
-    <%= f.password_field :password %></div>
+<%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
+  <%= f.error_notification %>
+
+  <div class="form-inputs">
+    <%= f.input :email,
+                required: true,
+                autofocus: true,
+                input_html: { autocomplete: "email" }%>
 ```
 
 #### Add HTML Around The Helpers
 
-You can write whatever HTML you want *around* these helpers; for example, Devise has already wrapped each label/input pair inside a `<div>`.
+You can write whatever HTML you want *around* these helpers; for example, Devise has already wrapped the label/input pairs inside a `<div>`:
 
-If we're adhering to [Bootstrap conventions for form markup](http://getbootstrap.com/css/#forms), we should probably add `class="form-group"` to each of those. Also, we should remove the `<br />` tags that Devise includes.
+```erb{4,7}
+<!-- app/views/devise/registrations/new.html.erb -->
+
+<!-- ... -->
+  <div class="form-inputs">
+    <%= f.input :email,
+    <!-- ... -->
+  </div>
+```
+
+Peruse the [Bootstrap conventions for form markup](https://getbootstrap.com/docs/5.3/forms/overview/) to get some inspiration for modifying these classes.
 
 #### Add CSS Classes To The Helpers
 
-You can also add CSS classes to the input tags they generate, like so:
+You can also add CSS classes to the input tags, like so:
 
-```erb
-<%= f.password_field :password, class: "form-control" %>
+```erb{6}
+  <div class="form-inputs">
+    <%= f.input :email,
+                required: true,
+                autofocus: true,
+                input_html: { autocomplete: "email" },
+                class: "my-custom-class" %>
 ```
 
 #### Add Additional Input Helpers
@@ -115,7 +134,39 @@ There are various types of `____field` helpers; the most common are
 
         <%= f.collection_select :company_id, Company.all, :id, :name %>
 
-You can add as many of these as you need for the additional columns you've included in your user model.
+You can add as many of these as you need for the additional columns you've included in your user model, e.g. on the sign-up form:
+
+```erb{9-11}
+<!-- app/views/devise/registrations/new.html.erb -->
+
+<h2>Sign up</h2>
+<!-- ... -->
+    <%= f.input :email,
+                required: true,
+                autofocus: true,
+                input_html: { autocomplete: "email" }%>
+    <%= f.input :avatar_url,
+            required: true,
+            autofocus: true %>
+    <!-- ... -->
+```
+
+and on the edit profile form:
+
+```erb{9-11}
+<!-- app/views/devise/registrations/edit.html.erb -->
+
+<h2>Edit <%= resource_name.to_s.humanize %></h2>
+<!-- ... -->
+    <%= f.input :password,
+                hint: "leave it blank if you don't want to change it",
+                required: false,
+                input_html: { autocomplete: "new-password" } %>
+    <%= f.input :avatar_url,
+            required: true,
+            autofocus: true %>
+    <!-- ... -->
+```
 
 #### Example Bootstrapped Devise Forms
 
@@ -125,19 +176,24 @@ You can add as many of these as you need for the additional columns you've inclu
 
 The last step we need to take is to whitelist these additional attributes as things that we will allow users to modify about themselves. To do this, you need to go to your `ApplicationController` and add the following code:
 
-```ruby
+```ruby{3-9}
 class ApplicationController < ActionController::Base
   before_action :authenticate_user!
   before_action :configure_permitted_parameters, if: :devise_controller?
-  
+
   def configure_permitted_parameters
     devise_parameter_sanitizer.permit(:sign_up, :keys => [:username, :avatar_url])
-    
+
     devise_parameter_sanitizer.permit(:account_update, :keys => [:avatar_url])
   end
 end
 ```
 
-You need to add the name of each column you want to be able to modify to the respective array of symbols. In the example, I have whitelisted both `:username` and `:avatar_url` to be modified upon sign-up, but only `:avatar_url` can be modified upon account update. You have to decide what makes sense in your app.
+You need to add the name of each column you want to be able to modify to the respective array of symbols. In the example, I have whitelisted both `:username` and `:avatar_url` to be modified upon sign-up, but only `:avatar_url` can be modified upon account update. You have to decide what makes sense in your app and modify the two forms accordingly:
+
+- `app/views/devise/registrations/new.html.erb`
+- `app/views/devise/registrations/edit.html.erb`
+
+Then add to the `configure_permitted_parameters` method in `ApplicationController`.
 
 ---
