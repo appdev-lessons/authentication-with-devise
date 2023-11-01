@@ -47,6 +47,14 @@ The big benefits that we now get for free from Devise are:
  - **The `current_user` helper method, available within all views and controllers, that will retrieve the row from the Users table for whoever is currently signed in.**
  - The `before_action :authenticate_user!` filter that we can use in our controllers to ensure someone is signed in before accessing any actions within that controller.
 
+ If you want to skip this action on any of your controller actions that are inheriting from `ApplicationController`, you can add this to that specific controller and action (the `:only =>` specifies the action that will be skipped):
+
+```ruby
+class UsersController < ApplicationController
+  skip_before_action(:authenticate_user!, { :only => [:index] })
+  # ...
+```
+
 There are lots more (password reset emails, etc), but these are the first ones that we care about.
 
 ## Customizing Devise Views
