@@ -72,8 +72,10 @@ The first problem is that we don't even have any code to edit in order to custom
 It's really easy to have Devise generate copies of these templates that we can edit, though. And then our edited versions will take precedence. Simply run
 
 ```
-rails g devise:views
+rails g devise:views -b form_for
 ```
+
+(Don't leave off `-b form_for` from that command, or your view templates will look different than in this lesson.)
 
 There will now be a folder in your `app/views` folder called `devise`, with a whole bunch of stuff in it. What we are most interested in are the contents of the `registrations` and `sessions` subfolders:
 
@@ -90,14 +92,21 @@ Devise is using some of the helper methods we've just learned about to draw the 
 
 <h2>Sign up</h2>
 
-<%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
-  <%= f.error_notification %>
+<%= form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
+  <%= render "devise/shared/error_messages", resource: resource %>
 
-  <div class="form-inputs">
-    <%= f.input :email,
-                required: true,
-                autofocus: true,
-                input_html: { autocomplete: "email" }%>
+  <div class="field">
+    <%= f.label :email %><br />
+    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :password %>
+    <% if @minimum_password_length %>
+    <em>(<%= @minimum_password_length %> characters minimum)</em>
+    <% end %><br />
+    <%= f.password_field :password, autocomplete: "new-password" %>
+  </div>
 ```
 
 #### Add HTML Around The Helpers
@@ -108,10 +117,11 @@ You can write whatever HTML you want *around* these helpers; for example, Devise
 <!-- app/views/devise/registrations/new.html.erb -->
 
 <!-- ... -->
-  <div class="form-inputs">
-    <%= f.input :email,
-    <!-- ... -->
+  <div class="field">
+    <%= f.label :email %><br />
+    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
   </div>
+  <!-- ... -->
 ```
 
 Peruse the [Bootstrap conventions for form markup](https://getbootstrap.com/docs/5.3/forms/overview/) to get some inspiration for modifying these classes.
@@ -120,13 +130,8 @@ Peruse the [Bootstrap conventions for form markup](https://getbootstrap.com/docs
 
 You can also add CSS classes to the input tags, like so:
 
-```erb{6}
-  <div class="form-inputs">
-    <%= f.input :email,
-                required: true,
-                autofocus: true,
-                input_html: { autocomplete: "email" },
-                class: "my-custom-class" %>
+```erb{1:(67-90)}
+<%= f.email_field :email, autofocus: true, autocomplete: "email", class: "my-custom-class" %>
 ```
 
 #### Add Additional Input Helpers
@@ -144,36 +149,44 @@ There are various types of `____field` helpers; the most common are
 
 You can add as many of these as you need for the additional columns you've included in your user model, e.g. on the sign-up form:
 
-```erb{9-11}
+```erb{10-13}
 <!-- app/views/devise/registrations/new.html.erb -->
 
 <h2>Sign up</h2>
 <!-- ... -->
-    <%= f.input :email,
-                required: true,
-                autofocus: true,
-                input_html: { autocomplete: "email" }%>
-    <%= f.input :avatar_url,
-            required: true,
-            autofocus: true %>
-    <!-- ... -->
+  <div class="field">
+    <%= f.label :password_confirmation %><br />
+    <%= f.password_field :password_confirmation, autocomplete: "new-password" %>
+  </div>
+
+  <div class="field">
+    <%= f.label :username %><br />
+    <%= f.text_field :username, autofocus: true %>
+  </div>
+<!-- ... -->
 ```
 
 and on the edit profile form:
 
-```erb{9-11}
+```erb{14-17}
 <!-- app/views/devise/registrations/edit.html.erb -->
 
 <h2>Edit <%= resource_name.to_s.humanize %></h2>
 <!-- ... -->
-    <%= f.input :password,
-                hint: "leave it blank if you don't want to change it",
-                required: false,
-                input_html: { autocomplete: "new-password" } %>
-    <%= f.input :avatar_url,
-            required: true,
-            autofocus: true %>
-    <!-- ... -->
+  <div class="field">
+    <%= f.label :email %><br />
+    <%= f.email_field :email, autofocus: true, autocomplete: "email" %>
+  </div>
+
+  <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+    <div>Currently waiting confirmation for: <%= resource.unconfirmed_email %></div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :username %><br />
+    <%= f.text_field :username, autofocus: true %>
+  </div>
+<!-- ... -->
 ```
 
 #### Example Bootstrapped Devise Forms
