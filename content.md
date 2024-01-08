@@ -2,6 +2,12 @@
 
 The [Devise gem](https://github.com/plataformatec/devise) is probably the most popular authentication library in the Rails ecosystem.
 
+This guide describes:
+
+- [how to set up Devise authentication](#add-sign-insign-out){: target="_self" }
+- [how to customize Devise views, including setting attributes besides email and password](#customizing-devise-views){: target="_self" }, and
+- [how to define a different root route for logged out users](#define-a-different-root-route-for-logged-out-users){: target="_self" }
+
 ## Add sign-in/sign-out
 
  - Add `gem "devise"` to your Gemfile and `bundle`
@@ -216,5 +222,27 @@ You need to add the name of each column you want to be able to modify to the res
 - `app/views/devise/registrations/edit.html.erb`
 
 Then add to the `configure_permitted_parameters` method in `ApplicationController`.
+
+## Define a different root route for logged out users
+
+By default, once you implement Devise, logged out users will be forced to the `"users/sign_in"` route before they can visit any other pages in the app.
+
+If you want to send logged out (a.k.a. "unauthenticated") users to one place, and logged in (a.k.a. "authenticated") users to another place, then you can do the following in your `config/routes.rb` file:
+
+```ruby
+Rails.application.routes.draw do
+  devise_for :users
+
+  unauthenticated do
+    root "home#index"
+  end
+
+  authenticated :user do
+    root "secret#index"
+  end
+end
+```
+
+`unauthenticated` and `authenticated` are keyword helper methods that come with Devise, and you must place the `unauthenticated` block _before_ the `authenticated` block. Then you will need to be sure to have the appropriate controllers and actions set up for each (in the example, `HomeController#index` and `SecretController#index`).
 
 ---
